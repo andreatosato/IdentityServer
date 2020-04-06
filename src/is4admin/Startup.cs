@@ -50,7 +50,7 @@ namespace is4admin
             });
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(Configuration.GetConnectionString("Users")));
+                options.UseSqlServer(Configuration.GetConnectionString("Users")));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -78,14 +78,14 @@ namespace is4admin
                 .AddConfigurationStore(options =>
                 {
                     options.ConfigureDbContext = db =>
-                        db.UseSqlite(connectionString,
+                        db.UseSqlServer(connectionString,
                             sql => sql.MigrationsAssembly(migrationsAssembly));
                 })
                 // this adds the operational data from DB (codes, tokens, consents)
                 .AddOperationalStore(options =>
                 {
                     options.ConfigureDbContext = db =>
-                        db.UseSqlite(connectionString,
+                        db.UseSqlServer(connectionString,
                             sql => sql.MigrationsAssembly(migrationsAssembly));
 
                     // this enables automatic token cleanup. this is optional.
@@ -97,14 +97,14 @@ namespace is4admin
             builder.AddDeveloperSigningCredential();
 
             services.AddAuthentication()
-                .AddGoogle(options =>
-                {
-                    // register your IdentityServer with Google at https://console.developers.google.com
-                    // enable the Google+ API
-                    // set the redirect URI to http://localhost:5000/signin-google
-                    options.ClientId = "copy client ID from Google here";
-                    options.ClientSecret = "copy client secret from Google here";
-                })
+                //.AddGoogle(options =>
+                //{
+                //    // register your IdentityServer with Google at https://console.developers.google.com
+                //    // enable the Google+ API
+                //    // set the redirect URI to http://localhost:5000/signin-google
+                //    options.ClientId = "copy client ID from Google here";
+                //    options.ClientSecret = "copy client secret from Google here";
+                //})
                 .AddOpenIdConnect("AAD", "Azure Active Directory", option =>
                 {
                     option.Authority = "https://login.microsoftonline.com/common/oauth2/v2.0/";
@@ -113,8 +113,6 @@ namespace is4admin
                     option.ResponseType = "code id_token";
                     option.Events.OnAuthorizationCodeReceived =
                         async (ctx) => await AuthorizationCodeReceived.CodeRedemptionAsync(ctx);
-                    
-                    
                 });
 
             services.UseAdminUI();
