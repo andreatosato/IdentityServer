@@ -17,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
+using static is4admin.Custom.AuthorizationCodeReceived;
 
 namespace is4admin
 {
@@ -52,7 +53,12 @@ namespace is4admin
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("Users")));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>()
+            services.AddIdentity<ApplicationUser, IdentityRole>(options => {
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 2;
+                options.Lockout.AllowedForNewUsers = true;
+            })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
@@ -107,12 +113,17 @@ namespace is4admin
                 //})
                 .AddOpenIdConnect("AAD", "Azure Active Directory", option =>
                 {
+                    option.SignInScheme = IdentityConstants.ExternalScheme;
                     option.Authority = "https://login.microsoftonline.com/common/oauth2/v2.0/";
-                    option.ClientId = "";
-                    option.ClientSecret = "Ze/Ktb_kqZS?8vVmi@8uZj6or29CIGyn";
+                    option.ClientId = Globals.ClientId;
+                    option.ClientSecret = Globals.ClientSecret;
                     option.ResponseType = "code id_token";
                     option.Events.OnAuthorizationCodeReceived =
                         async (ctx) => await AuthorizationCodeReceived.CodeRedemptionAsync(ctx);
+                    option.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                    {
+                        ValidateIssuer = false
+                    };
                 });
 
             services.UseAdminUI();

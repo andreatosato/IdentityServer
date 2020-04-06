@@ -48,12 +48,10 @@ namespace is4admin
                 {
                     Log.Information("Seeding database...");
                     var config = host.Services.GetRequiredService<IConfiguration>();
-                    var connectionString = config.GetConnectionString("DefaultConnection");
+                    var connectionString = config.GetConnectionString("Users");
                     SeedData.EnsureSeedData(connectionString);
                     Log.Information("Done seeding database.");
-                    return 0;
                 }
-
 
                 Log.Information("Starting host...");
                 host.Run();
