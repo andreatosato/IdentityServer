@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using IdentityExpress.Identity;
 using IdentityModel;
 using IdentityServer4.EntityFramework.DbContexts;
 using IdentityServer4.EntityFramework.Mappers;
 using IdentityServer4.Models;
+using is4admin.Custom;
 using is4admin.Data;
 using is4admin.Models;
 using Microsoft.AspNetCore.Builder;
@@ -96,8 +96,7 @@ namespace is4admin
                 {
                     Log.Debug("bob already exists");
                 }
-            }
-           
+            }           
         }
 
         public static void InitDb(this IApplicationBuilder app)
@@ -105,37 +104,30 @@ namespace is4admin
             using (var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
                 var contextPersistent = scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>();
+                contextPersistent.Database.EnsureDeleted();
                 contextPersistent.Database.Migrate();
 
                 var context = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
                 context.Database.Migrate();
 
-                if (!context.Clients.Any())
+                foreach (var client in Config.GetClients())
                 {
-                    foreach (var client in Config.GetClients())
-                    {
-                        context.Clients.Add(client);
-                    }
-                    context.SaveChanges();
+                    context.Clients.Add(client);
                 }
-
-                if (!context.IdentityResources.Any())
+                context.SaveChanges();
+               
+                foreach (var resource in Config.GetIdentityResources())
                 {
-                    foreach (var resource in Config.GetIdentityResources())
-                    {
-                        context.IdentityResources.Add(resource);
-                    }
-                    context.SaveChanges();
+                    context.IdentityResources.Add(resource);
                 }
-
-                if (!context.ApiResources.Any())
+                context.SaveChanges();
+               
+                foreach (var resource in Config.GetApiResources())
                 {
-                    foreach (var resource in Config.GetApiResources())
-                    {
-                        context.ApiResources.Add(resource);
-                    }
-                    context.SaveChanges();
+                    context.ApiResources.Add(resource);
                 }
+                context.SaveChanges();
+               
             }
         }
     }
@@ -185,8 +177,12 @@ namespace is4admin
                 new IdentityResources.Profile().ToEntity(),
                 new IdentityResource(
                     name: "custom.profile",
-                    displayName: "Custom profile",
-                    claimTypes: new[] { JwtClaimTypes.Name, JwtClaimTypes.Address }).ToEntity()
+                    displayName: "Custom profile - MobilePhone, JobTitle, Name",
+                    claimTypes: new[] { 
+                        JwtClaimTypes.Name, 
+                        ClaimTypes.MobilePhone, 
+                        AADClaims.JobTitle 
+                    }).ToEntity()
             };
         }
 
@@ -194,25 +190,13 @@ namespace is4admin
         {
             return new List<IdentityServer4.EntityFramework.Entities.ApiResource>()
             {
-                new ApiResource("API1", "My API")
+                new ApiResource("api1", "API One - Sample for CloudGen")
                 { 
                     // include the following using claims in access token (in addition to subject id)
                     UserClaims = { JwtClaimTypes.Name, JwtClaimTypes.Email, JwtClaimTypes.Address, JwtClaimTypes.WebSite},
-                    // this API defines two scopes
-                    Scopes =
-                    {
-                        new Scope()
-                        {
-                            Name = "api2.full_access",
-                            UserClaims = { "AdminClaim" },
-                            DisplayName = "Full access to API 2",
-                        },
-                        new Scope()
-                        {
-                            Name = "api2.read_only",
-                            DisplayName = "Read only access to API 2"
-                        }
-                    }
+                    // this API defines scopes
+                    //Scopes = ...
+                    
                 }.ToEntity(),
             };
         }
