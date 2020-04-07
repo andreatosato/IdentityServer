@@ -86,24 +86,25 @@ namespace is4admin
                     };
                 })
                 .AddAspNetIdentity<ApplicationUser>()
-                // this adds the config data from DB (clients, resources, CORS)
+                // this adds the config data from DB (clients, resources)
                 .AddConfigurationStore(options =>
                 {
-                    options.ConfigureDbContext = db =>
-                        db.UseSqlServer(connectionString,
+                    options.ConfigureDbContext = builder =>
+                        builder.UseSqlServer(connectionString,
                             sql => sql.MigrationsAssembly(migrationsAssembly));
                 })
                 // this adds the operational data from DB (codes, tokens, consents)
                 .AddOperationalStore(options =>
                 {
-                    options.ConfigureDbContext = db =>
-                        db.UseSqlServer(connectionString,
+                    options.ConfigureDbContext = builder =>
+                        builder.UseSqlServer(connectionString,
                             sql => sql.MigrationsAssembly(migrationsAssembly));
 
                     // this enables automatic token cleanup. this is optional.
                     options.EnableTokenCleanup = true;
-                    // options.TokenCleanupInterval = 15; // interval in seconds. 15 seconds useful for debugging
+                    options.TokenCleanupInterval = 30;
                 });
+
 
             // not recommended for production - you need to store your key material somewhere secure
             builder.AddDeveloperSigningCredential();
@@ -146,6 +147,8 @@ namespace is4admin
         {
             if (Environment.IsDevelopment())
             {
+                app.InitDb();
+                app.InitUserDb();
                 app.UseDeveloperExceptionPage();
                 app.UseDatabaseErrorPage();
             }

@@ -41,6 +41,8 @@ namespace is4admin.Custom
 				if(!string.IsNullOrEmpty(userMe.CompanyName)) claimAdded.Add(new Claim(AADClaims.CompanyName, userMe.CompanyName));
 				if(!string.IsNullOrEmpty(userMe.Country)) claimAdded.Add(new Claim(AADClaims.Country, userMe.Country));
 				if (!string.IsNullOrEmpty(userMe.JobTitle)) claimAdded.Add(new Claim(AADClaims.JobTitle, userMe.JobTitle));
+				if (userMe.BusinessPhones.Any()) claimAdded.Add(new Claim(ClaimTypes.MobilePhone, userMe.BusinessPhones.FirstOrDefault()));
+				if (!string.IsNullOrEmpty(userMe.StreetAddress)) claimAdded.Add(new Claim(ClaimTypes.StreetAddress, userMe.StreetAddress));
 			}
 
 			return new UserAAD 
