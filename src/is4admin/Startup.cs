@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Reflection;
 using static is4admin.Custom.AuthorizationCodeReceived;
 
@@ -35,6 +36,10 @@ namespace is4admin
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+            // preserve OIDC state in cache (solves problems with AAD and URL lenghts)
+            services.AddOidcStateDataFormatterCache();
+            // cookie policy to deal with temporary browser incompatibilities
+            services.AddSameSiteCookiePolicy();
 
             // configures IIS out-of-proc settings (see https://github.com/aspnet/AspNetCore/issues/14882)
             services.Configure<IISOptions>(iis =>
@@ -64,6 +69,7 @@ namespace is4admin
 
             var connectionString = Configuration.GetConnectionString("Configuration");
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
+
 
             var builder = services.AddIdentityServer(options =>
                 {
@@ -111,23 +117,29 @@ namespace is4admin
                 //    options.ClientId = "copy client ID from Google here";
                 //    options.ClientSecret = "copy client secret from Google here";
                 //})
-                .AddOpenIdConnect("AAD", "Azure Active Directory", option =>
+                .AddOpenIdConnect("AAD", "Azure Active Directory", options =>
                 {
-                    option.SignInScheme = IdentityConstants.ExternalScheme;
-                    option.Authority = "https://login.microsoftonline.com/common/oauth2/v2.0/";
-                    option.ClientId = Globals.ClientId;
-                    option.ClientSecret = Globals.ClientSecret;
-                    option.ResponseType = "code id_token";
-                    option.Events.OnAuthorizationCodeReceived =
-                        async (ctx) => await AuthorizationCodeReceived.CodeRedemptionAsync(ctx);
-                    option.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                    options.SignInScheme = IdentityConstants.ExternalScheme;
+                    options.SignOutScheme = IdentityServerConstants.SignoutScheme;
+                    options.Authority = Globals.Authority;
+                    options.ClientId = Globals.ClientId;
+                    options.ClientSecret = Globals.ClientSecret;
+                    options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
+                    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                     {
-                        ValidateIssuer = false
+                        ValidateIssuer = false,
+                        NameClaimType = "name",
+                        RoleClaimType = "role"
                     };
+
+                    options.Events.OnAuthorizationCodeReceived =
+                        async (ctx) => await AuthorizationCodeReceived.CodeRedemptionAsync(ctx);
+                    options.GetClaimsFromUserInfoEndpoint = true;
+                    options.SaveTokens = true;
                 });
 
-            services.UseAdminUI();
-            services.AddScoped<IdentityExpressDbContext, SqliteIdentityDbContext>();
+            services.UseAdminUI();            
+            services.AddScoped<IdentityExpressDbContext, SqlServerIdentityDbContext>(sp => new SqlServerIdentityDbContext(Configuration.GetConnectionString("Users")));
         }
 
         public void Configure(IApplicationBuilder app)

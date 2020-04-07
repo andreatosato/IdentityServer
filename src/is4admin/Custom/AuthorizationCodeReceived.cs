@@ -20,7 +20,7 @@ namespace is4admin.Custom
 			   .Build();
 
 			var authResult = await clientapp
-				.AcquireTokenByAuthorizationCode(Globals.BasicSignInScopes.Split(" "), code)
+				.AcquireTokenByAuthorizationCode(Globals.BasicSignInScopes, code)
 				.ExecuteAsync();
 
 			ctx.HandleCodeRedemption(authResult.AccessToken, id_token);
@@ -30,7 +30,7 @@ namespace is4admin.Custom
         {
             public const string Authority = "https://login.microsoftonline.com/common/v2.0/";
             public const string AdminConsentFormat = "https://login.microsoftonline.com/{0}/adminconsent?client_id={1}&state={2}&redirect_uri={3}";
-            public const string BasicSignInScopes = "openid profile email offline_access user.readbasic.all user.read";
+            public static readonly string[] BasicSignInScopes = new [] { "openid", "profile", "email", "User.Read", "User.ReadBasic.All" };
             public const string NameClaimType = "name";
 			public const string RedirectUri = "http://localhost:5000/signin-oidc";
 			public const string ClientId = "50fb4df5-2cb3-4eb0-b50a-398f0f37d034";
