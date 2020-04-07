@@ -139,9 +139,9 @@ namespace is4admin
                     options.SaveTokens = true;
                 });
 
-            services.UseAdminUI();            
-            //services.AddScoped<IdentityExpressDbContext, SqlServerIdentityDbContext>(sp => new SqlServerIdentityDbContext(Configuration.GetConnectionString("Users")));
-            services.AddScoped<IdentityExpressDbContext, SqlServerIdentityDbContext>();
+            //services.UseAdminUI();            
+            ////services.AddScoped<IdentityExpressDbContext, SqlServerIdentityDbContext>(sp => new SqlServerIdentityDbContext(Configuration.GetConnectionString("Users")));
+            //services.AddScoped<IdentityExpressDbContext, SqlServerIdentityDbContext>();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -165,7 +165,7 @@ namespace is4admin
             app.UseIdentityServer();
             app.UseAuthorization();
 
-            app.UseAdminUI();
+            //app.UseAdminUI();
 
             app.UseEndpoints(endpoints => endpoints.MapDefaultControllerRoute());
         }
