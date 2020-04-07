@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using IdentityExpress.Identity;
 using IdentityModel;
+using IdentityServer4.EntityFramework.DbContexts;
+using IdentityServer4.EntityFramework.Entities;
 using is4admin.Data;
 using is4admin.Models;
 using Microsoft.AspNetCore.Identity;
@@ -101,7 +104,70 @@ namespace is4admin
                         Log.Debug("bob already exists");
                     }
                 }
+
+
+
+
+
+
+
+
+
+
+                using (var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
+                {
+                    var contextPersistent = scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>();
+                    contextPersistent.Database.Migrate();
+
+                    var context = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+                    context.Database.Migrate();
+
+                    if (!context.Clients.Any())
+                    {
+                        foreach (var client in Config.GetClients())
+                        {
+                            context.Clients.Add(client);
+                        }
+                        context.SaveChanges();
+                    }
+
+                    if (!context.IdentityResources.Any())
+                    {
+                        foreach (var resource in Config.GetIdentityResources())
+                        {
+                            context.IdentityResources.Add(resource);
+                        }
+                        context.SaveChanges();
+                    }
+
+                    if (!context.ApiResources.Any())
+                    {
+                        foreach (var resource in Config.GetApiResources())
+                        {
+                            context.ApiResources.Add(resource);
+                        }
+                        context.SaveChanges();
+                    }
+                }
             }
+        }
+    }
+
+    public class Config
+    {
+        public static List<Client> GetClients()
+        {
+            return new List<Client>();
+        }
+
+        public static List<IdentityResource> GetIdentityResources()
+        {
+            return new List<IdentityResource>();
+        }
+
+        public static List<ApiResource> GetApiResources()
+        {
+            return new List<ApiResource>();
         }
     }
 }
